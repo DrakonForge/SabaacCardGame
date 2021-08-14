@@ -47,6 +47,12 @@ class Card:
         
         if self.value == 15:
             return "Ace of " + Card.getSuitName(self.suit)
+    
+    def getSuitIndex(self):
+        return self.suit
+    
+    def getValue(self):
+        return self.value
         
 max = 15
 for i in range(1, max + 1):
