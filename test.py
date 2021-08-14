@@ -12,7 +12,7 @@ print("General Kenobi! You are a " + kenobi)
 
 hobbits = [ "frodo", "bilbo", "sam", "merry", "pippin" ]
 
-print()
+print(hobbits)
 for hobbit in hobbits:
     print(hobbit)
     
@@ -43,7 +43,7 @@ print(dictionary["y"])
 
 def doX():
     global x
-    x = x * 1.25
+    x = x * (3 / 5)
     print(x)
     
 doX()
@@ -61,5 +61,7 @@ deck = Deck()
 print(deck.numCards) # 52
 deck.numCards = 1
 print(deck.numCards) # 1
+
+
 deck2 = Deck()
 print(deck2.numCards) # 52
