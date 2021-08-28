@@ -13,6 +13,10 @@ class Player:
     # emptyHand() -> clears out hand
     def emptyHand(self):
         self.hand = []
+        
+    def printHand(self):
+        for card in self.hand:
+            print(card)
     
     # getCardAtHandIndex(index) -> return card at index
     def getCardAtHandIndex(self, index):
@@ -27,16 +31,24 @@ class Player:
     def getChips(self):
         return self.chips
         
-player = Player("Andrew")
-print(player.getName())
-print(player.getChips())
-print()
-print(player.getHand())
-player.addToHand(Card(Card.COINS, 1))
-print(player.getHand())
-player.addToHand(Card(Card.STAVES, 3))
-print(player.getHand())
-print()
-print(player.getCardAtHandIndex(1).getName())
-player.emptyHand()
-print(player.getHand())
+def main():
+    player = Player("Andrew")
+    player.addToHand(Card(Card.COINS, 1))
+    player.addToHand(Card(Card.STAVES, 3))
+    player.printHand()
+    
+    # print(player.getName())
+    # print(player.getChips())
+    # print()
+    # print(player.getHand())
+    # player.addToHand(Card(Card.COINS, 1))
+    # print(player.getHand())
+    # player.addToHand(Card(Card.STAVES, 3))
+    # print(player.getHand())
+    # print()
+    # print(player.getCardAtHandIndex(1).getName())
+    # player.emptyHand()
+    # print(player.getHand())
+    
+if __name__ == "__main__":
+    main()

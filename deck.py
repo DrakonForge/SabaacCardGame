@@ -1,4 +1,5 @@
 from card import Card
+import random
 
 class Deck:
     # static createDeck() -> return a full Sabaac Deck
@@ -41,16 +42,35 @@ class Deck:
         self.addCard(card2)
     
     # shuffle() -> shuffle the list
+    def shuffle(self):
+        random.shuffle(self.deckList)
 
     # draw() -> return and remove first card from deck
+    def draw(self):
+        return self.deckList.pop(0)
     
     def printDeck(self):
         for card in self.deckList:
-            print(card.getName())
+            print(card)
             
     def getDeckList(self):
         return self.deckList
+        
+    def getDeckSize(self):
+        return len(self.deckList)
             
-deck = Deck.createDeck()
-deck.printDeck()
-print(str(len(deck.getDeckList())) + " should be 76")
+def main():
+    deck = Deck.createDeck()
+    deck.shuffle()
+    
+    print(deck.getDeckSize())
+    print(deck.draw())
+    print(deck.draw())
+    print(deck.draw())
+    print()
+    print(deck.getDeckSize())
+    #deck.printDeck()
+    #print(str(len(deck.getDeckList())) + " should be 76")
+
+if __name__ == "__main__":
+    main()

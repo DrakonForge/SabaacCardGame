@@ -54,13 +54,15 @@ class Card:
     def getValue(self):
         return self.value
         
-max = 15
-for i in range(1, max + 1):
-    card = Card(Card.COINS, i)
-    print(card.getName())
-    
-print()
+    def __str__(self):
+        return self.getName() + " (" + str(self.getValue()) + ")"
 
-for i in range(1, 4 + 1):
-    suitName = Card.getSuitName(i)
-    print(suitName)
+def main():
+    max = 15
+
+    for i in range(1, max + 1):
+        card = Card(Card.COINS, i)
+        print(card)
+
+if __name__ == "__main__":
+    main()
