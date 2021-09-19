@@ -7,13 +7,13 @@ class Card:
     
     @staticmethod
     def getSuitName(suit):
-        if suit == 1:
+        if suit == Card.COINS:
             return "Coins"
-        if suit == 2:
+        if suit == Card.FLASKS:
             return "Flasks"
-        if suit == 3:
+        if suit == Card.SABERS:
             return "Sabers"
-        if suit == 4:
+        if suit == Card.STAVES:
             return "Staves"
         return "None"
     
