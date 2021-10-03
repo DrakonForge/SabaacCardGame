@@ -21,6 +21,9 @@ class Player:
     # getCardAtHandIndex(index) -> return card at index
     def getCardAtHandIndex(self, index):
         return self.hand[index]
+    
+    def removeCardAtHandIndex(self, index):
+        return self.hand.pop(index)
 
     def getName(self):
         return self.name

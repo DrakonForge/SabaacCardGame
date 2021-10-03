@@ -1,9 +1,12 @@
 print("Hello, world!")
+print("gamers, rise up!")
 print("Hello there!")
 print("General Kenobi! You are a bold one")
 
-x = 10 + 3
 
+x = 10 + 3
+if x == 13:
+    print("you passed math dumbassian")
 print(x)
 
 kenobi = "bold one"
