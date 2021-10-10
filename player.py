@@ -6,6 +6,9 @@ class Player:
         self.hand = []
         self.chips = 0
         
+    def changeChips(self, amount):
+        self.chips += amount
+        
     # addToHand(card) -> add a card to hand
     def addToHand(self, card):
         self.hand.append(card)

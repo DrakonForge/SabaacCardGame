@@ -1,3 +1,12 @@
+arr = [ "a", "b", "c", "d" ]
+index = 2
+print(arr[:index]) # before c
+print(arr[(index + 1):]) # after c
+
+
+
+
+
 print("Hello, world!")
 print("gamers, rise up!")
 print("Hello there!")

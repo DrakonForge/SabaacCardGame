@@ -32,13 +32,15 @@ class Game:
         return result
         #pass
     
-    def __init__(self, playerNameList):
+    def __init__(self, playerNameList, startingChips = 30):
         self.deck = Deck.createDeck()
         self.deck.shuffle()
         
         self.playerList = []
+        self.foldedPlayers = []
         for playerName in playerNameList:
             player = Player(playerName)
+            player.changeChips(startingChips)
             self.playerList.append(player)
             
         self.handPot = 0
@@ -49,10 +51,16 @@ class Game:
         # Celebrate the last survivor of the apocalypse
     
     def doRound(self):
+        self.foldedPlayers = []
+        self.handPot = 0
+        
         self.dealCards()
         self.doBettingPhase(True)
         self.doShiftingPhase()
         self.doDrawingPhase()
+        
+        # If someone all-ins in either phase, other players can continue to raise while exempting the other player
+        # Second betting phase needs to be skipped entirely if there's an all-in in first phase
         self.doBettingPhase(False)
         self.resolveRound()
         self.confirmPlayAgain()
@@ -65,15 +73,85 @@ class Game:
     
     def doBettingPhase(self, withAnte):
         print("BETTING PHASE")
-        # create a queue of players
-        # set min cost
-        # while queue is not empty:
+        
+        # remainingPlayers = copy of self.playerList
+        remainingPlayers = [ player for player in self.playerList ]
+        minCost = 0
+        
+        if withAnte:
+            minCost = Game.ANTE
+            
+        totalPaidPerPlayer = {}
+        for player in self.playerList:
+            totalPaidPerPlayer[player.getName()] = 0
+        
+        # TODO: Player wins hand if all other players fold
+        # TODO: If first player all-ins
+        while len(remainingPlayers) > 0:
             # get player from front of queue
+            player = remainingPlayers.pop(0)
+            
+            if player in self.foldedPlayers:
+                continue
+            
             # display the player's hand
-            # prompt player to FOLD, CALL, RAISE, CHECK
-            # do weird loop logic help me
-            # wiggle our fingers at the hand pot
-        pass
+            print(player.getName())
+            print("Chips:", player.getChips())
+            print("Hand Pot:", self.handPot)
+            print("Need to Pay:", minCost - totalPaidPerPlayer[player.getName()])
+            player.printHand()
+            
+            actions = [ "Fold", "Call" ]
+            
+            # Cannot both call and check--use the same slot?
+            
+            if minCost == 0:
+                actions[1] = "Check"
+            if player.getChips() > 1:
+                actions.append("Raise")
+            
+            choice = Game.printMenu(actions)
+            
+            if choice == 1:
+                self.foldedPlayers.append(player)
+            if choice == 2:
+                if minCost == 0:
+                    continue
+                
+                amountNeeded = minCost - totalPaidPerPlayer[player.getName()]
+                
+                if amountNeeded > player.getChips():
+                    amountNeeded = player.getChips()
+                
+                player.changeChips(-amountNeeded)
+                self.handPot += amountNeeded
+                totalPaidPerPlayer[player.getName()] += amountNeeded
+            if choice == 3:
+                # Disallow this if the player's broke
+                print("Input number of chips to raise by.")
+                amountToRaise = Game.getPlayerChoiceFromInput(player.getChips() - minCost)
+                amountNeeded = amountToRaise + minCost - totalPaidPerPlayer[player.getName()]
+                
+                player.changeChips(-amountNeeded)
+                self.handPot += amountNeeded
+                totalPaidPerPlayer[player.getName()] += amountNeeded
+                minCost += amountToRaise
+                
+                # Reset the queue starting with the player afterward
+                playerIndex = self.playerList.index(player)
+                
+                # [p1, p2, p3, p4]
+                remainingPlayers = []
+                
+                for other in self.playerList[(playerIndex + 1):]:
+                    if other in self.foldedPlayers:
+                        continue
+                    remainingPlayers.append(other)
+                
+                for other in self.playerList[:playerIndex]:
+                    if other in self.foldedPlayers:
+                        continue
+                    remainingPlayers.append(other)
     
     def doShiftingPhase(self):
         print("SHIFTING PHASE")
