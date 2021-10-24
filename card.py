@@ -1,10 +1,15 @@
+"""
+Card class that represents a single card in the deck.
+"""
 class Card:
+    # Constant numerical ids for suits
     NO_SUIT = 0
     COINS = 1
     FLASKS = 2
     SABERS = 3
     STAVES = 4
     
+    # Returns the name of a suit given its numerical ids
     @staticmethod
     def getSuitName(suit):
         if suit == Card.COINS:
@@ -17,22 +22,23 @@ class Card:
             return "Staves"
         return "None"
     
-    # constructor
+    # Constructor with an optional name
     def __init__(self, suit, value, name = None):
         self.suit = suit
         self.value = value
         self.name = name
-        
+    
+    # Returns the name of the card
     def getName(self):
-        # if name is defined, return name
+        # If name is defined, return name
         if self.name != None:
             return self.name
         
-        # if suit is undefined, cannot generate
-        if self.suit == None:
+        # If suit is undefined, cannot generate
+        if self.suit == None or self.suit == Card.NO_SUIT:
             return None
         
-        # if value is correct, generate name
+        # Attempt to generate name based on value
         if self.value >= 1 and self.value <= 11:
             return str(self.value) + " of " + Card.getSuitName(self.suit)
         
@@ -48,12 +54,15 @@ class Card:
         if self.value == 15:
             return "Ace of " + Card.getSuitName(self.suit)
     
+    # Returns the numerical id of this card's suit
     def getSuitIndex(self):
         return self.suit
     
+    # Returns the value of the card
     def getValue(self):
         return self.value
-        
+    
+    # Allows Card objects to be printed as strings
     def __str__(self):
         return self.getName() + " (" + str(self.getValue()) + ")"
 
