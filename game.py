@@ -40,6 +40,10 @@ class Game:
             else:
                 # Number was not within right range, try again
                 print("Must be between 1 and " + str(max) + "!")
+                
+    @staticmethod()
+    def containsIdiotsArray(hand):
+        pass
     
     # Constructor that creates a game with the given player list and starting chips
     def __init__(self, playerNameList, startingChips = 30):
