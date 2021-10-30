@@ -11,6 +11,7 @@ class Game:
     HAND_POT_ANTE = 2      # The number of chips that must be contributed to the hand pot every round
     SABAAC_VALUE = 0       # Value needed to achieve Sabaac
     BOMB_OUT = 24          # Bomb-out value where all players with this value or higher lose
+    SHIFT_CHANCE = 1.0 / 6.0;
     
     # Prints out a menu of options and returns the player's choice, indexed at 1
     @staticmethod
@@ -90,9 +91,10 @@ class Game:
         self.resetRound()           # Begin the actual round
         self.dealCards()            # Deal cards to everyone
         self.doBettingPhase(True)   # First round of betting, with hand pot ante
-        self.doShiftingPhase()      # Random chance to shift
+        self.attemptShift()
         self.doDrawingPhase()       # Allow players to draw, exchange, or discard
         self.doBettingPhase(False)  # Second round of betting
+        self.attemptShift()
         self.resolveRound()         # Determine the winner
         self.confirmPlayAgain()     # Allow players to continue or quit
     
@@ -233,15 +235,6 @@ class Game:
                 for other in self.currentPlayers[:playerIndex]:
                     remainingPlayers.append(other)
     
-    # Shifting phase
-    def doShiftingPhase(self):
-        # If all but one player has folded, skip this phase
-        if len(self.currentPlayers) <= 1:
-            return
-        
-        print("SHIFTING PHASE")
-        # TODO: Still don't know what this phase does tbh
-    
     # Drawing phase where players can draw, exchange, or discard a card
     def doDrawingPhase(self):
         # If all but one player has folded, skip this phase
@@ -277,6 +270,7 @@ class Game:
                 # Allow player to view their hand again
                 player.printHand()
                 input("Press Enter to continue...")
+            self.attemptShift()
     
     # Resolves the round and determines the winner
     def resolveRound(self):
@@ -348,6 +342,15 @@ class Game:
                 # If there's only one player left, end early
                 if len(self.playerList) <= 1:
                     return
+    
+    # Has a SHIFT_CHANCE chance to shift
+    def attemptShift(self):
+        if len(self.currentPlayers) <= 1:
+            return
+        pass
+    
+    def shift(self):
+        pass
     
     # Draws a card from the deck and adds it to the player's hand
     def drawCardForPlayer(self, player):
