@@ -15,12 +15,14 @@ class Game:
     
     # Prints out a menu of options and returns the player's choice, indexed at 1
     @staticmethod
-    def printMenu(options):
+    def printMenu(options, indexOnly=False):
         index = 1
         for option in options:
             print("(" + str(index) + ") " + str(option))
             index += 1 # index = index + 1
-        chosenIndex = Game.getPlayerChoiceFromInput(len(options));
+        chosenIndex = Game.getPlayerChoiceFromInput(len(options))
+        if indexOnly:
+            return chosenIndex
         return options[chosenIndex - 1]
     
     # Prompts the player for a number between [1, max]
@@ -257,7 +259,7 @@ class Game:
                 handChanged = True
             if choice == "Exchange":
                 # Exchange
-                cardChoice = Game.printMenu(player.getHand())
+                cardChoice = Game.printMenu(player.getHand(), indexOnly=True)
                 discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
                 self.drawCardForPlayer(player)
                 handChanged = True
@@ -267,7 +269,7 @@ class Game:
                 self.deck.shuffle()
             if choice == "Discard":
                 # Discard
-                cardChoice = Game.printMenu(player.getHand())
+                cardChoice = Game.printMenu(player.getHand(), indexOnly=True)
                 discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
             
             if handChanged:
