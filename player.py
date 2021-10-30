@@ -8,6 +8,7 @@ class Player:
     def __init__(self, name):
         self.name = name
         self.hand = []
+        self.interferenceField = []
         self.chips = 0
     
     # Modifies the player's chips by the given amount
@@ -26,6 +27,7 @@ class Player:
     # Clears the player's hand
     def emptyHand(self):
         self.hand = []
+        self.interferenceField = []
     
     # Returns the player's current hand value
     def calculateHandValue(self):
