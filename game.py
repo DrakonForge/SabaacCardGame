@@ -19,7 +19,8 @@ class Game:
         for option in options:
             print("(" + str(index) + ") " + str(option))
             index += 1 # index = index + 1
-        return Game.getPlayerChoiceFromInput(len(options))
+        chosenIndex = Game.getPlayerChoiceFromInput(len(options));
+        return options[chosenIndex - 1]
     
     # Prompts the player for a number between [1, max]
     @staticmethod
@@ -186,14 +187,12 @@ class Game:
                 actions.append("Raise")
             
             choice = Game.printMenu(actions)
-            if choice == 1:
-                # Fold
+            if choice == "Fold":
                 self.currentPlayers.remove(player)
                 
                 if len(self.currentPlayers) <= 1:
                     return
-            if choice == 2:
-                # Call/Check/All-in
+            if choice == "Call" or choice == "Check" or choice == "All-in":
                 if minCost == 0:
                     # Check, do nothing
                     continue
@@ -206,8 +205,7 @@ class Game:
                 player.changeChips(-amountNeeded)
                 self.handPot += amountNeeded
                 totalPaidPerPlayer[player.getName()] += amountNeeded
-            if choice == 3:
-                # Raise
+            if choice == "Raise":
                 print("Input number of chips to raise by.")
                 amountToRaise = Game.getPlayerChoiceFromInput(player.getChips() - minCost)
                 
@@ -256,11 +254,11 @@ class Game:
             choice = Game.printMenu(["Draw", "Exchange", "Discard", "Skip"])
             handChanged = False
             
-            if choice == 1:
+            if choice == "Draw":
                 # Draw
                 self.drawCardForPlayer(player)
                 handChanged = True
-            if choice == 2:
+            if choice == "Exchange":
                 # Exchange
                 cardChoice = Game.printMenu(player.getHand())
                 discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
@@ -270,11 +268,10 @@ class Game:
                 # Shuffle the card back into the deck
                 self.deck.addCard(discardedCard)
                 self.deck.shuffle()
-            if choice == 3:
+            if choice == "Discard":
                 # Discard
                 cardChoice = Game.printMenu(player.getHand())
                 discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
-                pass
             
             if handChanged:
                 # Allow player to view their hand again
@@ -344,7 +341,7 @@ class Game:
             result = Game.printMenu(["Continue", "Quit"])
             
             # Do nothing if they choose to continue
-            if result == 2:
+            if result == "Quit":
                 # Player quits
                 self.playerList.remove(player)
                 
