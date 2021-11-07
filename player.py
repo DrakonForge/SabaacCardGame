@@ -23,10 +23,15 @@ class Player:
     # Adds a card to the player's hand
     def addToHand(self, card):
         self.hand.append(card)
+        
+    def addToInterferenceField(self, card):
+        self.interferenceField.append(card)
     
     # Clears the player's hand
     def emptyHand(self):
         self.hand = []
+    
+    def emptyInterferenceField(self):
         self.interferenceField = []
     
     # Returns the player's current hand value
@@ -34,21 +39,38 @@ class Player:
         handValue = 0
         for card in self.hand:
             handValue += card.getValue()
+        for card in self.interferenceField:
+            handValue += card.getValue()
         handValue = abs(handValue)
         return handValue
         
     # Prints all cards in the player's hand
     def printHand(self, prefix = ""):
+        print("In Hand: ")
         for card in self.hand:
+            print(prefix + str(card))
+        if len(self.hand) <= 0:
+            print("* Empty")
+        print()
+        print("In Interference Field: ")
+        if len(self.interferenceField) <= 0:
+            print("* Empty")
+        for card in self.interferenceField:
             print(prefix + str(card))
     
     # Returns the card at the given index
     def getCardAtHandIndex(self, index):
         return self.hand[index]
     
+    def getCardInInterferenceField(self, index):
+        return self.interferenceField[index]
+    
     # Removes and returns the card at the given index
     def removeCardAtHandIndex(self, index):
         return self.hand.pop(index)
+        
+    def removeCardInInterferenceField(self, index):
+        return self.interferenceField.pop(index)
 
     # Returns the player's name
     def getName(self):
@@ -57,6 +79,9 @@ class Player:
     # Returns the player's hand (a list of cards)
     def getHand(self):
         return self.hand
+    
+    def getInterferenceField(self):
+        return self.interferenceField
 
     # Returns the player's current chips
     def getChips(self):

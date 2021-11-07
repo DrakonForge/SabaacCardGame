@@ -1,22 +1,27 @@
 from card import Card
 from deck import Deck
 from player import Player
+import random
 
 """
 Game class that represents a Sabaac game.
 """
 class Game:
-    STARTING_HAND_SIZE = 5 # The number of cards drawn at the beginning of every round
+    STARTING_HAND_SIZE = 2 # The number of cards drawn at the beginning of every round
     SABAAC_POT_ANTE = 2    # The number of chips that must be contributed to the Sabaac pot every round
     HAND_POT_ANTE = 2      # The number of chips that must be contributed to the hand pot every round
-    SABAAC_VALUE = 0       # Value needed to achieve Sabaac
-    BOMB_OUT = 24          # Bomb-out value where all players with this value or higher lose
-    SHIFT_CHANCE = 1.0 / 6.0;
+    SABAAC_VALUE = 23       # Value needed to achieve Sabaac
+    SHIFT_CHANCE = 1.0 / 6.0
+    
+    PURE_SABAAC_VALUE = 999
+    IDIOTS_ARRAY_VALUE = 1000
     
     # Prints out a menu of options and returns the player's choice, indexed at 1
     @staticmethod
-    def printMenu(options, indexOnly=False):
+    def printMenu(title, options, indexOnly=False):
         index = 1
+        print()
+        print(title)
         for option in options:
             print("(" + str(index) + ") " + str(option))
             index += 1 # index = index + 1
@@ -43,7 +48,7 @@ class Game:
                 # Number was not within right range, try again
                 print("Must be between 1 and " + str(max) + "!")
                 
-    @staticmethod()
+    @staticmethod
     def containsIdiotsArray(hand):
         pass
     
@@ -62,6 +67,7 @@ class Game:
         self.deck = None
         self.handPot = 0
         self.sabaacPot = 0
+        self.actionLog = []
     
     # Resets player hands, hand pot, etc.
     def resetRound(self):
@@ -71,12 +77,16 @@ class Game:
         # Empty all hands
         for player in self.playerList:
             player.emptyHand()
+            player.emptyInterferenceField()
 
         # Reset hand pot
         self.handPot = 0
         
         # Reset deck
         self.deck = Deck.createDeck()
+        
+        # Reset action log
+        self.actionLog = []
     
     def playGame(self):
         # While there are two or more players, keep playing
@@ -125,6 +135,7 @@ class Game:
                 if player.getChips() > 0:
                     # Taunt them if they weren't completely broke
                     print("Sorry,", player.getName() + ". The House always wins :)")
+                self.actionLog.append(player.getName() + " was kicked from the match.")
             else:
                 # Player pays Sabaac pot ante to stay in the game
                 player.changeChips(-Game.SABAAC_POT_ANTE)
@@ -194,9 +205,10 @@ class Game:
             if amountNeeded < player.getChips():
                 actions.append("Raise")
             
-            choice = Game.printMenu(actions)
+            choice = Game.printMenu("BETTING PHASE", actions)
             if choice == "Fold":
                 self.currentPlayers.remove(player)
+                self.actionLog.append(player.getName() + " folded.")
                 
                 if len(self.currentPlayers) <= 1:
                     return
@@ -208,6 +220,9 @@ class Game:
                 if amountNeeded > player.getChips():
                     # Player does not have enough chips, all-in
                     amountNeeded = player.getChips()
+                    self.actionLog.append(player.getName() + " WENT ALL IN, entering " + str(amountNeeded) + " into the hand pot.")
+                else:
+                    self.actionLog.append(player.getName() + " entered " + str(amountNeeded) + " into the hand pot.")
                 
                 # Pay up to the amount needed
                 player.changeChips(-amountNeeded)
@@ -220,6 +235,7 @@ class Game:
                 # Update amountNeeded
                 amountNeeded = amountToRaise + minCost - totalPaidPerPlayer[player.getName()]
                 
+                self.actionLog.append(player.getName() + " raised the hand pot by " + str(amountToRaise) + ", paying a total of " + str(amountNeeded) + ".")
                 player.changeChips(-amountNeeded)
                 self.handPot += amountNeeded
                 totalPaidPerPlayer[player.getName()] += amountNeeded
@@ -248,41 +264,78 @@ class Game:
             return
         
         print("DRAW PHASE")
-        for player in self.currentPlayers:
-            self.printCurrentGameState(player)
-            choice = Game.printMenu(["Draw", "Exchange", "Discard", "Skip"])
-            handChanged = False
-            
-            if choice == "Draw":
-                # Draw
-                self.drawCardForPlayer(player)
-                handChanged = True
-            if choice == "Exchange":
-                # Exchange
-                cardChoice = Game.printMenu(player.getHand(), indexOnly=True)
-                discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
-                self.drawCardForPlayer(player)
-                handChanged = True
+        everyoneSkipped = False
+        while not everyoneSkipped:
+            everyoneSkipped = True
+            for player in self.currentPlayers:
                 
-                # Shuffle the card back into the deck
-                self.deck.addCard(discardedCard)
-                self.deck.shuffle()
-            if choice == "Discard":
-                # Discard
-                cardChoice = Game.printMenu(player.getHand(), indexOnly=True)
-                discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
-            
-            if handChanged:
-                # Allow player to view their hand again
-                player.printHand()
-                input("Press Enter to continue...")
-            self.attemptShift()
+                # Stand
+                # Draw
+                # If you have 1+ cards in hand, Exchange with deck
+                # If you have 1+ cards in hand, you can insert into Inteference field
+                # If you have 1+ cards in IF, remove card from IF
+                # If you have 1+ cards in hand AND IF, Swap two cards, one from hand one from IF
+                
+                self.printCurrentGameState(player)
+                
+                menu = ["Stand", "Draw"]
+                cardsInHand = len(player.getHand()) > 0
+                cardsInIF = len(player.getInterferenceField()) > 0
+                
+                if cardsInHand:
+                    menu.append("Exchange")
+                    menu.append("Insert into IF")
+                
+                if cardsInIF:
+                    menu.append("Remove from IF")
+                
+                if cardsInHand and cardsInIF:
+                    menu.append("Swap from IF")
+                
+                choice = Game.printMenu("DRAW PHASE", menu)
+                
+                if choice == "Draw":
+                    # Draw
+                    self.drawCardForPlayer(player)
+                    self.actionLog.append(player.getName() + " drew a card.")
+                if choice == "Exchange":
+                    # Exchange
+                    cardChoice = Game.printMenu("Choose a Card From Hand", player.getHand(), indexOnly=True)
+                    discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
+                    self.drawCardForPlayer(player)
+                    # Shuffle the card back into the deck
+                    self.deck.addCard(discardedCard)
+                    self.deck.shuffle()
+                    self.actionLog.append(player.getName() + " exchanged a card.")
+                if choice == "Insert into IF":
+                    cardChoice = Game.printMenu("Choose Card from Hand", player.getHand(), indexOnly=True)
+                    discardedCard = player.removeCardAtHandIndex(cardChoice - 1)
+                    player.addToInterferenceField(discardedCard)
+                    self.actionLog.append(player.getName() + " put a card into their interference field.")
+                if choice == "Remove from IF":
+                    cardChoice = Game.printMenu("Choose Card from Interference Field", player.getInterferenceField(), indexOnly=True)
+                    discardedCard = player.removeCardInInterferenceField(cardChoice - 1)
+                    player.addToHand(discardedCard)
+                    self.actionLog.append(player.getName() + " removed a card from their interference field.")
+                if choice == "Swap from IF":
+                    handChoice = Game.printMenu("Choose Card from Hand", player.getHand(), indexOnly=True)
+                    IFChoice = Game.printMenu("Choose Card from Interference Field", player.getInterferenceField(), indexOnly=True)
+                    handCard = player.removeCardAtHandIndex(handChoice - 1)
+                    IFCard = player.removeCardInInterferenceField(IFChoice - 1)
+                    player.addToHand(IFCard)
+                    player.addToInterferenceField(handCard)
+                    self.actionLog.append(player.getName() + " swapped a card from their interference field.")
+                
+                if choice != "Stand":
+                    everyoneSkipped = False
+                    # Allow player to view their hand again
+                    player.printHand()
+                    input("Press Enter to continue...")
+                self.attemptShift()
     
     # Resolves the round and determines the winner
     def resolveRound(self):
         print("RESOLVE PHASE")
-        
-        SABAAC_BONUS = 999
         
         maxMagnitude = -1   # Tracks the current maximum magnitude
         winningPlayers = [] # Tracks all players that have value equal to
@@ -293,13 +346,15 @@ class Game:
             handValue = player.calculateHandValue()
             
             # If player bombs out, they cannot win
-            if handValue >= Game.BOMB_OUT:
+            if handValue > Game.SABAAC_VALUE:
                 continue
             
-            # TODO: Idiot's Array trumps normal Sabaac
             # If player has a Sabaac, assign them an absurdly high value
-            if handValue == Game.SABAAC_VALUE:
-                handValue = SABAAC_BONUS
+            if self.isIdiotsArray(player.getHand(), player.getInterferenceField()):
+                # Idiot's Array trumps pure Sabaac
+                handValue = Game.IDIOTS_ARRAY_VALUE
+            elif handValue == Game.SABAAC_VALUE:
+                handValue = Game.PURE_SABAAC_VALUE
             
             if handValue > maxMagnitude:
                 # New maximum magnitude found, reset the list and update max
@@ -311,7 +366,7 @@ class Game:
         
         if len(winningPlayers) != 1:
             # It's a tie, hand pot goes to sabaac pot instead
-            if maxMagnitude == SABAAC_BONUS:
+            if maxMagnitude >= Game.PURE_SABAAC_VALUE:
                 # Multiple Sabaacs, somehow? Lmao have fun losing
                 print("Lmao it's a tie, no one wins")
             else:
@@ -324,12 +379,35 @@ class Game:
             self.handPot = 0
             
             # If they also got a Sabaac, give them the Sabaac pot too
-            if maxMagnitude == SABAAC_BONUS:
-                print(winningPlayer.gameName(), "WINS THE SABAAC POT!")
+            if maxMagnitude >= Game.PURE_SABAAC_VALUE:
+                print(winningPlayer.getName(), "WINS THE SABAAC POT!")
                 winningPlayer.changeChips(self.sabaacPot)
                 self.sabaacPot = 0
             else:
                 print(winningPlayer.getName(), "wins!")
+                
+    def isIdiotsArray(self, hand, IF):
+        hasIdiot = False
+        has2 = False
+        has3 = False
+        
+        for card in hand:
+            if card.getValue() == 0:
+                hasIdiot = True
+            elif card.getValue() == 2:
+                has2 = True
+            elif card.getValue() == 2:
+                has3 = True
+                
+        for card in IF:
+            if card.getValue() == 0:
+                hasIdiot = True
+            elif card.getValue() == 2:
+                has2 = True
+            elif card.getValue() == 2:
+                has3 = True
+        
+        return hasIdiot and has2 and has3
     
     # Asks each player if they want to continue
     def confirmPlayAgain(self):
@@ -338,10 +416,10 @@ class Game:
         
         for player in allPlayers:
             self.printCurrentGameState(player)
-            result = Game.printMenu(["Continue", "Quit"])
+            result = Game.printMenu("PLAY AGAIN?", ["Yes", "No"])
             
             # Do nothing if they choose to continue
-            if result == "Quit":
+            if result == "No":
                 # Player quits
                 self.playerList.remove(player)
                 
@@ -353,10 +431,30 @@ class Game:
     def attemptShift(self):
         if len(self.currentPlayers) <= 1:
             return
-        pass
+        if random.random() < Game.SHIFT_CHANCE:
+            self.shift()
     
     def shift(self):
-        pass
+        cardList = []
+        playerHandSizes = {}
+        
+        # Gather all cards from hands
+        for player in self.currentPlayers:
+            playerHandSizes[player.getName()] = len(player.getHand())
+            for card in player.getHand():
+                cardList.append(card)
+            player.emptyHand()
+            
+        random.shuffle(cardList)
+        
+        # Redistribute
+        for player in self.currentPlayers:
+            numCards = playerHandSizes[player.getName()]
+            for i in range(numCards):
+                player.addToHand(cardList.pop(0))
+                
+        print("CARDS SHIFTED!")
+        self.actionLog.append("CARDS SHIFTED!")
     
     # Draws a card from the deck and adds it to the player's hand
     def drawCardForPlayer(self, player):
@@ -366,16 +464,39 @@ class Game:
     # Prints the current state of the game to the player
     def printCurrentGameState(self, player):
         print("===", player.getName() + "'s Turn", "===")
+        print("Action Log:")
+        for line in self.actionLog:
+            print("* " + line)
+        print()
         print("Hand Pot:", self.handPot, "| Sabaac Pot:", self.sabaacPot)
         print("Other Players:")
-        for player in self.playerList:
-            # TODO: Print their hand size, number of chips, and if they've folded
-            # Ex. "* Player2 is still in the game. (3 cards in hand, 5 chips)"
-            # or  "* Player3 has folded. (5 chips)"
-            # or something fancier, idk
-            pass
+        for otherPlayer in self.playerList:
+            if otherPlayer in self.currentPlayers:
+                if(player == otherPlayer):
+                    continue
+                otherPlayerDisplay = "* " + otherPlayer.getName() + " is still in the game. "
+                otherPlayerDisplay += "(" + str(otherPlayer.getChips()) + ") "
+                otherPlayerDisplay += "("
+                
+                for card in otherPlayer.getHand():
+                    otherPlayerDisplay += "X, "
+                if len(otherPlayer.getHand()) > 0:
+                    if len(otherPlayer.getInterferenceField()) <= 0:
+                        otherPlayerDisplay = otherPlayerDisplay[:-2]
+                    
+                for card in otherPlayer.getInterferenceField():
+                    otherPlayerDisplay += str(card) + ", "
+                if len(otherPlayer.getInterferenceField()) > 0:
+                    otherPlayerDisplay = otherPlayerDisplay[:-2]
+                
+                otherPlayerDisplay += ")"
+            else:
+                otherPlayerDisplay = "* " + otherPlayer.getName() + " has folded. "
+                otherPlayerDisplay += "(" + str(otherPlayer.getChips()) + ")"
+            print(otherPlayerDisplay)
         print()
         print("Chips:", player.getChips())
+        print()
         print("Your Hand (Total = " + str(player.calculateHandValue()) + "):")
         player.printHand("* ")
     
