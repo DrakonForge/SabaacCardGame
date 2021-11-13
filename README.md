@@ -2,7 +2,7 @@
 
 ## Overview
 
-This program re-creates the [Sabaac](https://starwars.fandom.com/wiki/Sabacc) card game from the *Star Wars* universe, which is essentially "space poker". It was designed as a beginner's project to introduce novices to **Python** and **object-oriented programming** concepts. This project was finished in **3 months** by a team of 3, with meetings approximately once per week.
+This program re-creates the [Sabaac](https://starwars.fandom.com/wiki/Sabacc) card game from the *Star Wars* universe, which is essentially "space poker". It was designed as a beginner's project to introduce programming novices to **Python** and **object-oriented programming** concepts. This project was finished in approximately **3 months** by a team of 3, meeting around once per week.
 
 It is played in a **command line**, and all players must use the same machine. It also features a text-based user interface using simple console input/output to play the game.
 
