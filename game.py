@@ -7,14 +7,15 @@ import random
 Game class that represents a Sabaac game.
 """
 class Game:
-    STARTING_HAND_SIZE = 2 # The number of cards drawn at the beginning of every round
-    SABAAC_POT_ANTE = 2    # The number of chips that must be contributed to the Sabaac pot every round
-    HAND_POT_ANTE = 2      # The number of chips that must be contributed to the hand pot every round
-    SABAAC_VALUE = 23       # Value needed to achieve Sabaac
-    SHIFT_CHANCE = 1.0 / 6.0
+    STARTING_HAND_SIZE = 2      # The number of cards drawn at the beginning of every round
+    SABAAC_POT_ANTE = 2         # The number of chips that must be contributed to the Sabaac pot every round
+    HAND_POT_ANTE = 2           # The number of chips that must be contributed to the hand pot every round
+    SABAAC_VALUE = 23           # Value needed to achieve Sabaac
+    SHIFT_CHANCE = 1.0 / 6.0    # Chance for a Shift to occur with any player action
     
     PURE_SABAAC_VALUE = 999
     IDIOTS_ARRAY_VALUE = 1000
+    MAX_PLAYERS = 20
     
     # Prints out a menu of options and returns the player's choice, indexed at 1
     @staticmethod
@@ -49,8 +50,19 @@ class Game:
                 print("Must be between 1 and " + str(max) + "!")
                 
     @staticmethod
-    def containsIdiotsArray(hand):
-        pass
+    def changePlayerTo(playerName):
+        numWhitespace = 50
+        for i in range(numWhitespace):
+            print()
+            
+        print("===================================")
+        print("= Please change to " + playerName + ".")
+        print("===================================")
+        print()
+        input("Press ENTER to continue...")
+            
+        for i in range(numWhitespace):
+            print()
     
     # Constructor that creates a game with the given player list and starting chips
     def __init__(self, playerNameList, startingChips = 30):
@@ -93,7 +105,10 @@ class Game:
         while len(self.playerList) > 1:
             self.doRound()
 
-        # TODO: Celebrate the last survivor of the apocalypse
+        if len(self.playerList) <= 0:
+            print("No players remaining, game over!")
+        elif len(self.playerList) == 1:
+            print(self.playerList[0].getName() + " is the last player remaining, game over!")
     
     # Plays a single round of Sabaac
     def doRound(self):
@@ -147,9 +162,6 @@ class Game:
         if len(self.currentPlayers) <= 1:
             return
         
-        # TODO: Make these barriers fancier
-        print("BETTING PHASE")
-        
         # Create a queue of remaining players that need to bet
         # Starts with all players still in the round, so makes a copy
         remainingPlayers = [ player for player in self.currentPlayers ]
@@ -185,6 +197,8 @@ class Game:
             if player.getChips() <= 0:
                 continue
             
+            Game.changePlayerTo(player.getName())
+            
             amountNeeded = minCost - totalPaidPerPlayer[player.getName()]
             
             # Print the game state + how much the player needs to pay:
@@ -214,6 +228,7 @@ class Game:
                     return
             if choice == "Call" or choice == "Check" or choice == "All-in":
                 if minCost == 0:
+                    self.actionLog.append(player.getName() + " checked.")
                     # Check, do nothing
                     continue
                 
@@ -222,7 +237,7 @@ class Game:
                     amountNeeded = player.getChips()
                     self.actionLog.append(player.getName() + " WENT ALL IN, entering " + str(amountNeeded) + " into the hand pot.")
                 else:
-                    self.actionLog.append(player.getName() + " entered " + str(amountNeeded) + " into the hand pot.")
+                    self.actionLog.append(player.getName() + " called, entering " + str(amountNeeded) + " into the hand pot.")
                 
                 # Pay up to the amount needed
                 player.changeChips(-amountNeeded)
@@ -263,19 +278,11 @@ class Game:
         if len(self.currentPlayers) <= 1:
             return
         
-        print("DRAW PHASE")
         everyoneSkipped = False
         while not everyoneSkipped:
             everyoneSkipped = True
             for player in self.currentPlayers:
-                
-                # Stand
-                # Draw
-                # If you have 1+ cards in hand, Exchange with deck
-                # If you have 1+ cards in hand, you can insert into Inteference field
-                # If you have 1+ cards in IF, remove card from IF
-                # If you have 1+ cards in hand AND IF, Swap two cards, one from hand one from IF
-                
+                Game.changePlayerTo(player.getName())
                 self.printCurrentGameState(player)
                 
                 menu = ["Stand", "Draw"]
@@ -325,6 +332,8 @@ class Game:
                     player.addToHand(IFCard)
                     player.addToInterferenceField(handCard)
                     self.actionLog.append(player.getName() + " swapped a card from their interference field.")
+                if choice == "Stand":
+                    self.actionLog.append(player.getName() + " stood.")
                 
                 if choice != "Stand":
                     everyoneSkipped = False
@@ -335,8 +344,7 @@ class Game:
     
     # Resolves the round and determines the winner
     def resolveRound(self):
-        print("RESOLVE PHASE")
-        
+        self.actionLog = []
         maxMagnitude = -1   # Tracks the current maximum magnitude
         winningPlayers = [] # Tracks all players that have value equal to
                             # current maximum magnitude
@@ -347,14 +355,19 @@ class Game:
             
             # If player bombs out, they cannot win
             if handValue > Game.SABAAC_VALUE:
+                self.actionLog.append(player.getName() + " bombed out with a hand value of " + str(handValue))
                 continue
             
             # If player has a Sabaac, assign them an absurdly high value
             if self.isIdiotsArray(player.getHand(), player.getInterferenceField()):
                 # Idiot's Array trumps pure Sabaac
                 handValue = Game.IDIOTS_ARRAY_VALUE
+                self.actionLog.append(player.getName() + " got an Idiot's Array!")
             elif handValue == Game.SABAAC_VALUE:
                 handValue = Game.PURE_SABAAC_VALUE
+                self.actionLog.append(player.getName() + " got a Pure Sabaac!")
+            else:
+                self.actionLog.append(player.getName() + " has a hand value of " + str(handValue))
             
             if handValue > maxMagnitude:
                 # New maximum magnitude found, reset the list and update max
@@ -368,9 +381,10 @@ class Game:
             # It's a tie, hand pot goes to sabaac pot instead
             if maxMagnitude >= Game.PURE_SABAAC_VALUE:
                 # Multiple Sabaacs, somehow? Lmao have fun losing
-                print("Lmao it's a tie, no one wins")
+                self.actionLog.append("It's a tie between Sabaac winners, no one wins the sabaac pot")
             else:
-                print("It's a tie!", self.handPot, "chips go to the Sabaac pot")
+                print("It's a tie!")
+            self.actionLog.append(self.handPot + " chips are lost to the Sabaac pot")
             self.sabaacPot += self.handPot
         else:
             # Only one winner, award them the hand pot
@@ -380,11 +394,11 @@ class Game:
             
             # If they also got a Sabaac, give them the Sabaac pot too
             if maxMagnitude >= Game.PURE_SABAAC_VALUE:
-                print(winningPlayer.getName(), "WINS THE SABAAC POT!")
+                self.actionLog.append(winningPlayer.getName() +  " WINS THE SABAAC POT!")
                 winningPlayer.changeChips(self.sabaacPot)
                 self.sabaacPot = 0
             else:
-                print(winningPlayer.getName(), "wins!")
+                self.actionLog.append(winningPlayer.getName() + " wins!")
                 
     def isIdiotsArray(self, hand, IF):
         hasIdiot = False
@@ -411,11 +425,14 @@ class Game:
     
     # Asks each player if they want to continue
     def confirmPlayAgain(self):
-        print("PLAY AGAIN?")
         allPlayers = [player for player in self.playerList]
         
         for player in allPlayers:
-            self.printCurrentGameState(player)
+            Game.changePlayerTo(player.getName())
+            print("===", player.getName() + "'s Turn", "===")
+            print("Round Results:")
+            for line in self.actionLog:
+                print("* " + line)
             result = Game.printMenu("PLAY AGAIN?", ["Yes", "No"])
             
             # Do nothing if they choose to continue
@@ -453,7 +470,6 @@ class Game:
             for i in range(numCards):
                 player.addToHand(cardList.pop(0))
                 
-        print("CARDS SHIFTED!")
         self.actionLog.append("CARDS SHIFTED!")
     
     # Draws a card from the deck and adds it to the player's hand
@@ -501,7 +517,15 @@ class Game:
         player.printHand("* ")
     
 def main():
-    players = [ "Player1", "Player2", "Player3" ]
+    numPlayers = int(input("Please enter the number of players: "))
+    if numPlayers < 2 or numPlayers > Game.MAX_PLAYERS:
+        print("Number not valid, setting to default of 2.");
+        numPlayers = 2
+    
+    players = []
+    for i in range(numPlayers):
+        players.append(input("Please enter Player " + str(i + 1) + "'s name: "))
+    
     game = Game(players)
     game.playGame()
     
